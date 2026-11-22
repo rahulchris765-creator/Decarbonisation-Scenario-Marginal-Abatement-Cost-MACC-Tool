@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decarbonisation MACC Tool — Rahul Christhuraj Latharani</title>
+<meta name="description" content="A marginal abatement cost curve tool for prioritising decarbonisation measures — portfolio project.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#f4f6f8; --surface:#ffffff; --ink:#17202b; --muted:#566272; --line:#d9e0e8;
+    --navy:#1d3b5c; --teal:#17766e; --chip:#e7eef5;
+    --good:#1baf7a; --cost:#2a78d6; --axis:#9fb0c3;
+    --f-display:'Barlow Semi Condensed',sans-serif; --f-body:'Source Sans 3',sans-serif; --f-mono:'IBM Plex Mono',monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg:#0e141b; --surface:#151d27; --ink:#eef2f6; --muted:#9fb0c3; --line:#28333f;
+      --navy:#93b8e6; --teal:#5fc7ba; --chip:#1c2733;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 20px 80px}
+  a{color:var(--teal)}
+  .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+  h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4vw,42px);margin:8px 0 6px;color:var(--navy)}
+  .lead{color:var(--muted);max-width:740px;margin:0 0 6px}
+  .note{background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-size:13.5px;color:var(--muted);margin:18px 0 30px}
+  .note b{color:var(--ink)}
+  .back-link{font-family:var(--f-mono);font-size:12.5px}
+  section{margin-top:40px}
+  .sec-label{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+  h2{font-family:var(--f-display);font-size:24px;margin:6px 0 18px;color:var(--navy)}
+  table.measures{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  table.measures th,table.measures td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}
+  table.measures th{font-family:var(--f-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  table.measures input{width:90px;padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);font-size:13px}
+  table.measures input[type=checkbox]{width:auto}
+  .actions{display:flex;gap:12px;margin:22px 0;flex-wrap:wrap}
+  button{font-family:var(--f-body);font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--navy);padding:11px 20px;cursor:pointer}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-ghost{background:transparent;color:var(--navy)}
+  .chart-wrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px 20px 10px;margin-top:18px;overflow-x:auto}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:0 0 14px;font-size:13px}
+  .legend-item{display:flex;align-items:center;gap:7px}
+  .swatch{width:10px;height:10px;border-radius:2px;display:inline-block}
+  svg text{font-family:var(--f-mono);fill:var(--muted)}
+  .bar-label{font-family:var(--f-body);fill:var(--ink)}
+  .tooltip{position:absolute;background:var(--navy);color:#fff;font-size:12px;padding:8px 10px;border-radius:6px;pointer-events:none;opacity:0;transition:opacity .1s;max-width:220px;z-index:5}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  @media (max-width:760px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .stat b{display:block;font-family:var(--f-display);font-size:24px;color:var(--navy)}
+  .stat span{font-size:12px;color:var(--muted)}
+  .reco{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--good);border-radius:8px;padding:16px 18px;margin-top:18px;font-size:14px}
+  footer{margin-top:60px;border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="back-link"><a href="../index.html">&larr; Back to portfolio</a></p>
+  <span class="eyebrow">Portfolio Project · Decarbonisation Advisory</span>
+  <h1>Decarbonisation Scenario &amp; Marginal Abatement Cost (MACC) Tool</h1>
+  <p class="lead">Models the cost-effectiveness of a set of decarbonisation measures — capex, annual savings and carbon abatement — and ranks them into a marginal abatement cost curve, the way a client-facing engagement would prioritise "right-sized" recommendations rather than a flat list of options.</p>
+  <div class="note"><b>About this demo:</b> the default measures and costs are drawn from the economics of UK domestic retrofit programmes (ECO4/GBIS) I've delivered as a Project Manager, generalised into illustrative per-site figures. Edit any cell to model a different building stock, site count or local cost base.</div>
+
+  <section>
+    <span class="sec-label">Inputs</span>
+    <h2>Decarbonisation measures</h2>
+    <table class="measures" id="measureTable">
+      <thead>
+        <tr><th>Include</th><th>Measure</th><th>Capex (£/site)</th><th>Lifetime (yrs)</th><th>Annual opex saving (£/site)</th><th>Annual abatement (tCO2e/site)</th><th>Sites</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="actions">
+      <button class="btn-primary" onclick="render()">Recalculate MACC</button>
+      <button class="btn-ghost" onclick="resetDefaults()">Reset to defaults</button>
+    </div>
+  </section>
+
+  <section>
+    <span class="sec-label">Results</span>
+    <h2>Marginal abatement cost curve</h2>
+    <div class="stats">
+      <div class="stat"><b id="totalAbate">–</b><span>Total abatement, tCO2e/year if all measures adopted</span></div>
+      <div class="stat"><b id="negCount">–</b><span>Measures that are net cost-saving (below £0/tCO2e)</span></div>
+      <div class="stat"><b id="negAbate">–</b><span>tCO2e/year achievable at zero or negative net cost</span></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="background:var(--good)"></span>Net cost-saving (£/tCO2e below 0)</div>
+        <div class="legend-item"><span class="swatch" style="background:var(--cost)"></span>Net cost (£/tCO2e above 0)</div>
+      </div>
+      <svg id="macc" width="1020" height="460"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+    <div class="reco" id="reco"></div>
+  </section>
+
+  <footer>
+    Built by Rahul Christhuraj Latharani as a self-directed portfolio project, applying marginal-abatement-cost logic to real UK retrofit measure economics. For illustration only — a client recommendation would use site-specific surveys and current local cost data. <a href="../index.html">View full portfolio →</a>
+  </footer>
+</div>
+
+<script>
+const DEFAULTS = [
+  {name:'LED lighting upgrade', capex:1200, life:12, saving:260, abate:0.9, sites:40},
+  {name:'Loft insulation top-up', capex:650, life:30, saving:140, abate:0.7, sites:40},
+  {name:'Cavity wall insulation', capex:1800, life:30, saving:310, abate:1.4, sites:40},
+  {name:'Smart heating controls', capex:450, life:10, saving:95, abate:0.4, sites:40},
+  {name:'Draught-proofing & ventilation', capex:900, life:15, saving:120, abate:0.5, sites:40},
+  {name:'Internal wall insulation', capex:7200, life:35, saving:480, abate:2.1, sites:40},
+  {name:'Air-source heat pump', capex:11500, life:20, saving:340, abate:2.8, sites:40},
+  {name:'Rooftop solar PV (4kWp)', capex:6200, life:25, saving:520, abate:1.6, sites:40},
+  {name:'EV fleet transition (per vehicle)', capex:9000, life:8, saving:650, abate:2.3, sites:12}
+];
+
+function discountFactor(rate, years){
+  // capital recovery factor, annualises capex over its lifetime at `rate`
+  if(rate===0) return 1/years;
+  return rate / (1 - Math.pow(1+rate, -years));
+}
+
+function buildTable(){
+  const tbody = document.querySelector('#measureTable tbody');
+  tbody.innerHTML = '';
+  DEFAULTS.forEach((m, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" id="inc-${i}" checked></td>
+      <td>${m.name}</td>
+      <td><input type="number" id="capex-${i}" value="${m.capex}"></td>
+      <td><input type="number" id="life-${i}" value="${m.life}"></td>
+      <td><input type="number" id="saving-${i}" value="${m.saving}"></td>
+      <td><input type="number" id="abate-${i}" value="${m.abate}" step="0.1"></td>
+      <td><input type="number" id="sites-${i}" value="${m.sites}"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function resetDefaults(){ buildTable(); render(); }
+
+function computeMeasures(){
+  const rate = 0.06; // discount rate assumption for annualising capex
+  const results = [];
+  DEFAULTS.forEach((m,i)=>{
+    const included = document.getElementById('inc-'+i).checked;
+    if(!included) return;
+    const capex = parseFloat(document.getElementById('capex-'+i).value)||0;
+    const life = parseFloat(document.getElementById('life-'+i).value)||1;
+    const saving = parseFloat(document.getElementById('saving-'+i).value)||0;
+    const abate = parseFloat(document.getElementById('abate-'+i).value)||0;
+    const sites = parseFloat(document.getElementById('sites-'+i).value)||0;
+    if(abate<=0 || sites<=0) return;
+    const annualCapex = capex * discountFactor(rate, life);
+    const netAnnualCost = (annualCapex - saving) * sites; // £/year across all sites
+    const totalAbate = abate * sites; // tCO2e/year across all sites
+    const costPerTonne = netAnnualCost / totalAbate; // £/tCO2e
+    results.push({name:m.name, costPerTonne, totalAbate, netAnnualCost});
+  });
+  results.sort((a,b)=>a.costPerTonne-b.costPerTonne);
+  return results;
+}
+
+function render(){
+  const data = computeMeasures();
+  const totalAbate = data.reduce((a,d)=>a+d.totalAbate,0);
+  const negatives = data.filter(d=>d.costPerTonne<0);
+  document.getElementById('totalAbate').textContent = totalAbate.toFixed(0);
+  document.getElementById('negCount').textContent = negatives.length;
+  document.getElementById('negAbate').textContent = negatives.reduce((a,d)=>a+d.totalAbate,0).toFixed(0);
+
+  const svg = document.getElementById('macc');
+  const W = 1020, H = 460, padL = 70, padR = 20, padT = 20, padB = 70;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  svg.innerHTML = '';
+
+  if(data.length===0){
+    svg.innerHTML = '<text x="20" y="40">No measures selected.</text>';
+    document.getElementById('reco').textContent = 'Select at least one measure to see results.';
+    return;
+  }
+
+  const maxCost = Math.max(...data.map(d=>Math.abs(d.costPerTonne)), 50);
+  const totalWidthUnits = data.reduce((a,d)=>a+d.totalAbate,0);
+  const zeroY = padT + (plotH * (maxCost/(maxCost*2)));
+
+  // zero line
+  const ns = 'http://www.w3.org/2000/svg';
+  const zeroLine = document.createElementNS(ns,'line');
+  zeroLine.setAttribute('x1', padL); zeroLine.setAttribute('x2', W-padR);
+  zeroLine.setAttribute('y1', zeroY); zeroLine.setAttribute('y2', zeroY);
+  zeroLine.setAttribute('stroke', 'var(--axis)'); zeroLine.setAttribute('stroke-width','1');
+  svg.appendChild(zeroLine);
+
+  const zeroLabel = document.createElementNS(ns,'text');
+  zeroLabel.setAttribute('x', padL-8); zeroLabel.setAttribute('y', zeroY+4);
+  zeroLabel.setAttribute('text-anchor','end'); zeroLabel.setAttribute('font-size','11');
+  zeroLabel.textContent = '£0';
+  svg.appendChild(zeroLabel);
+
+  let xCursor = padL;
+  const tooltip = document.getElementById('tooltip');
+  data.forEach(d=>{
+    const w = (d.totalAbate/totalWidthUnits) * plotW;
+    const barH = (Math.abs(d.costPerTonne)/maxCost) * (plotH/2);
+    const y = d.costPerTonne >= 0 ? zeroY - barH : zeroY;
+    const rect = document.createElementNS(ns,'rect');
+    rect.setAttribute('x', xCursor);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', Math.max(w-2,1));
+    rect.setAttribute('height', Math.max(barH,1));
+    rect.setAttribute('fill', d.costPerTonne < 0 ? 'var(--good)' : 'var(--cost)');
+    rect.setAttribute('rx', '2');
+    rect.addEventListener('mousemove', (e)=>{
+      tooltip.style.opacity = 1;
+      tooltip.style.left = (e.pageX+12)+'px';
+      tooltip.style.top = (e.pageY-10)+'px';
+      tooltip.innerHTML = `<b>${d.name}</b><br>£${d.costPerTonne.toFixed(0)}/tCO2e &middot; ${d.totalAbate.toFixed(1)} tCO2e/yr`;
+    });
+    rect.addEventListener('mouseleave', ()=>{ tooltip.style.opacity = 0; });
+    svg.appendChild(rect);
+
+    if(w > 55){
+      const label = document.createElementNS(ns,'text');
+      label.setAttribute('x', xCursor + w/2);
+      label.setAttribute('y', d.costPerTonne>=0 ? y-6 : zeroY+barH+16);
+      label.setAttribute('text-anchor','middle');
+      label.setAttribute('font-size','11');
+      label.setAttribute('class','bar-label');
+      label.textContent = d.name.length>18 ? d.name.slice(0,16)+'…' : d.name;
+      svg.appendChild(label);
+    }
+    xCursor += w;
+  });
+
+  const axisLabel = document.createElementNS(ns,'text');
+  axisLabel.setAttribute('x', W/2); axisLabel.setAttribute('y', H-18);
+  axisLabel.setAttribute('text-anchor','middle'); axisLabel.setAttribute('font-size','12');
+  axisLabel.textContent = 'Cumulative annual abatement potential (tCO2e/year) →   |   bar height = £ per tCO2e abated';
+  svg.appendChild(axisLabel);
+
+  const freeAbate = negatives.reduce((a,d)=>a+d.totalAbate,0);
+  document.getElementById('reco').innerHTML = negatives.length
+    ? `<b>Recommendation:</b> prioritise the ${negatives.length} measure(s) left of £0/tCO2e first — they deliver ${freeAbate.toFixed(0)} tCO2e/year of abatement while paying for themselves within their lifetime. Sequence the remaining measures by £/tCO2e as budget allows, rather than funding all measures uniformly.`
+    : `<b>Recommendation:</b> none of the current measures are net cost-saving at these inputs — focus funding on the lowest £/tCO2e options first, and revisit opex-saving or lifetime assumptions, which are the inputs this result is most sensitive to.`;
+}
+
+buildTable();
+render();
+</script>
+</body>
+</html>
